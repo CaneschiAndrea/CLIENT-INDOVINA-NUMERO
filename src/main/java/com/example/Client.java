@@ -1,35 +1,58 @@
 package com.example;
-import java.net.*;
+
 import java.io.*;
-import java.util.Scanner;
+import java.net.*;
+import java.util.*;
 
 public class Client {
+    Socket miosocket;
+    Scanner input;
+    String stringaUtente;
+    String stringaRicevutaDalServer;
+    DataOutputStream outVersoServer;
+    BufferedReader inDalServer;
 
-    public void startClient() {
+    public Socket connetti(String nomeServer, int portaServer) {
+        System.out.println("CLIENT in esecuzione ...");
         try {
-            Socket socket = new Socket("localhost", 3000);
-            System.out.println("Connessione effettuata al server.");
+            input = new Scanner(System.in);
+            miosocket = new Socket(nomeServer, portaServer);
 
-            BufferedReader inDalServer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            DataOutputStream outVersoServer = new DataOutputStream(socket.getOutputStream());
-            Scanner scanner = new Scanner(System.in);
+            outVersoServer = new DataOutputStream(miosocket.getOutputStream());
+            inDalServer = new BufferedReader(new InputStreamReader(miosocket.getInputStream()));
+        } catch (UnknownHostException e) {
+            System.err.println("Host sconosciuto");
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            System.out.println("Qualcosa è andato storto, chiusura client...");
+            System.exit(1);
+        }
+        return miosocket;
+    }
+
+    public void comunica() {
+        try {
+            System.out.println("Benvenuto al gioco di indovinare il numero!");
 
             while (true) {
-                String messaggioDalServer = inDalServer.readLine();
-                System.out.println("Server -> " + messaggioDalServer);
+                stringaRicevutaDalServer = inDalServer.readLine();
+                System.out.println(stringaRicevutaDalServer);
 
-                if (messaggioDalServer.equals("4")) {
+                if (stringaRicevutaDalServer.contains("Congratulazioni")) {
                     break;
                 }
 
-                int numeroUtente = scanner.nextInt();
-                outVersoServer.writeBytes(numeroUtente + "\n");
+                System.out.print("Inserisci un numero: ");
+                stringaUtente = input.next();
+                outVersoServer.writeBytes(stringaUtente + '\n');
             }
 
-            System.out.println("Chiusura connessione.");
-            socket.close();
-        } catch (IOException e) {
-            System.err.println("Errore durante l'esecuzione del client: " + e.getMessage());
+            System.out.println("CLIENT: Termina il gioco e chiude la connessione");
+            miosocket.close();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            System.out.println("Errore durante la comunicazione col server!");
+            System.exit(1);
         }
     }
 }
